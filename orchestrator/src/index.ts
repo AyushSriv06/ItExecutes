@@ -16,12 +16,12 @@ const appsV1Api = kubeconfig.makeApiClient(AppsV1Api);
 const networkingV1Api = kubeconfig.makeApiClient(NetworkingV1Api);
 
 // Updated utility function to handle multi-document YAML files
-const readAndParseKubeYaml = (filePath: string, replId: string): Array<any> => {
+const readAndParseKubeYaml = (filePath: string, execId: string): Array<any> => {
     const fileContent = fs.readFileSync(filePath, 'utf8');
     const docs = yaml.parseAllDocuments(fileContent).map((doc) => {
         let docString = doc.toString();
         const regex = new RegExp(`service_name`, 'g');
-        docString = docString.replace(regex, replId);
+        docString = docString.replace(regex, execId);
         console.log(docString);
         return yaml.parse(docString);
     });
@@ -29,11 +29,11 @@ const readAndParseKubeYaml = (filePath: string, replId: string): Array<any> => {
 };
 
 app.post("/start", async (req, res) => {
-    const { userId, replId } = req.body; // Assume a unique identifier for each user
+    const { userId, execId } = req.body; // Assume a unique identifier for each user
     const namespace = "default"; // Assuming a default namespace, adjust as needed
 
     try {
-        const kubeManifests = readAndParseKubeYaml(path.join(__dirname, "../service.yaml"), replId);
+        const kubeManifests = readAndParseKubeYaml(path.join(__dirname, "../service.yaml"), execId);
         for (const manifest of kubeManifests) {
             switch (manifest.kind) {
                 case "Deployment":
