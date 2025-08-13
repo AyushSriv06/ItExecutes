@@ -3,17 +3,25 @@ import fs from "fs";
 import yaml from "yaml";
 import path from "path";
 import cors from "cors";
-import { KubeConfig, AppsV1Api, CoreV1Api, NetworkingV1Api } from "@kubernetes/client-node";
 
 const app = express();
 app.use(express.json());
 app.use(cors());
 
-const kubeconfig = new KubeConfig();
-kubeconfig.loadFromDefault();
-const coreV1Api = kubeconfig.makeApiClient(CoreV1Api);
-const appsV1Api = kubeconfig.makeApiClient(AppsV1Api);
-const networkingV1Api = kubeconfig.makeApiClient(NetworkingV1Api);
+// Dynamic imports for ES modules
+let kubeconfig: any, coreV1Api: any, appsV1Api: any, networkingV1Api: any;
+
+const initializeK8s = async () => {
+    const { KubeConfig, AppsV1Api, CoreV1Api, NetworkingV1Api } = await import("@kubernetes/client-node");
+    kubeconfig = new KubeConfig();
+    kubeconfig.loadFromDefault();
+    coreV1Api = kubeconfig.makeApiClient(CoreV1Api);
+    appsV1Api = kubeconfig.makeApiClient(AppsV1Api);
+    networkingV1Api = kubeconfig.makeApiClient(NetworkingV1Api);
+};
+
+// Initialize K8s on startup
+initializeK8s();
 
 // Updated utility function to handle multi-document YAML files
 const readAndParseKubeYaml = (filePath: string, execId: string): Array<any> => {
@@ -29,11 +37,17 @@ const readAndParseKubeYaml = (filePath: string, execId: string): Array<any> => {
 };
 
 app.post("/start", async (req, res) => {
-    const { userId, execId } = req.body; // Assume a unique identifier for each user
+    const { userId, execId, replId } = req.body; // Accept both execId and replId
+    const id = execId ?? replId;
     const namespace = "default"; // Assuming a default namespace, adjust as needed
 
+    if (!id) {
+        res.status(400).send({ message: "Missing execId/replId" });
+        return;
+    }
+
     try {
-        const kubeManifests = readAndParseKubeYaml(path.join(__dirname, "../service.yaml"), execId);
+        const kubeManifests = readAndParseKubeYaml(path.join(__dirname, "../service.yaml"), id);
         for (const manifest of kubeManifests) {
             switch (manifest.kind) {
                 case "Deployment":
