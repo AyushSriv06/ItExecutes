@@ -1,4 +1,5 @@
 import { S3 } from "aws-sdk"
+import fs from "fs";
 import path from "path";
 
 const s3 = new S3({
