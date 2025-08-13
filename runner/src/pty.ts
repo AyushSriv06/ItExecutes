@@ -1,7 +1,12 @@
 import { spawn, IPty } from 'node-pty';
 import path from "path";
 
-const SHELL = "bash";
+function resolveShell(): string {
+    if (process.platform === 'win32') {
+        return process.env.COMSPEC || 'powershell.exe';
+    }
+    return process.env.SHELL || 'bash';
+}
 
 export class TerminalManager {
     private sessions: { [id: string]: {terminal: IPty, execId: string;} } = {};
@@ -10,11 +15,13 @@ export class TerminalManager {
         this.sessions = {};
     }
     
-    createPty(id: string, execId: string, onData: (data: string, id: number) => void) {
-        let term = spawn(SHELL, [], {
+    createPty(id: string, execId: string, onData: (data: string, id: number) => void, workspaceDir?: string) {
+        const shell = resolveShell();
+        const cwd = workspaceDir ?? '/workspace';
+        let term = spawn(shell, [], {
             cols: 100,
             name: 'xterm',
-            cwd: `/workspace`
+            cwd
         });
     
         term.onData((data: string) => onData(data, term.pid));
