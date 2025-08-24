@@ -1,35 +1,28 @@
-import { spawn, IPty } from 'node-pty';
-import path from "path";
+//@ts-ignore => someone fix this
+import { fork, IPty } from 'node-pty';
 
-function resolveShell(): string {
-    if (process.platform === 'win32') {
-        return process.env.COMSPEC || 'powershell.exe';
-    }
-    return process.env.SHELL || 'bash';
-}
+const SHELL = "bash";
 
 export class TerminalManager {
-    private sessions: { [id: string]: {terminal: IPty, execId: string;} } = {};
+    private sessions: { [id: string]: {terminal: IPty, replId: string;} } = {};
 
     constructor() {
         this.sessions = {};
     }
     
-    createPty(id: string, execId: string, onData: (data: string, id: number) => void, workspaceDir?: string) {
-        const shell = resolveShell();
-        const cwd = workspaceDir ?? '/workspace';
-        let term = spawn(shell, [], {
+    createPty(id: string, replId: string, onData: (data: string, id: number) => void) {
+        let term = fork(SHELL, [], {
             cols: 100,
             name: 'xterm',
-            cwd
+            cwd: `/workspace`
         });
     
-        term.onData((data: string) => onData(data, term.pid));
+        term.on('data', (data: string) => onData(data, term.pid));
         this.sessions[id] = {
             terminal: term,
-            execId
+            replId
         };
-        term.onExit(() => {
+        term.on('exit', () => {
             delete this.sessions[term.pid];
         });
         return term;

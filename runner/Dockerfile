@@ -1,23 +1,26 @@
-# Use the official Node.js 14 as a parent image
+# Use the official Node.js 20 as a parent image
 FROM node:20
 
 # Set the working directory in the container
 WORKDIR /code
 
-# Copy package.json and package-lock.json (if available) to the working directory
+# Copy package.json and package-lock.json first for better layer caching
 COPY package*.json ./
 
-# Install any dependencies
-RUN npm install
+# Install dependencies in Linux environment (this will compile native modules for Linux)
+RUN npm ci
 
-# Copy the rest of your application's code to the working directory
+# Copy the source code (excluding node_modules via .dockerignore)
 COPY . .
 
-# Build your app
+# Build the TypeScript code
 RUN npm run build
+
+# Remove dev dependencies to reduce image size
+RUN npm prune --production
 
 # Expose WebSocket port used by the runner
 EXPOSE 3005
 
-# Define the command to run your app using CMD which defines your runtime
+# Define the command to run your app
 CMD [ "node", "dist/index.js" ]
