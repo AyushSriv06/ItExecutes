@@ -36,6 +36,9 @@ const readAndParseKubeYaml = (filePath: string, execId: string): Array<any> => {
     return docs;
 };
 
+// Resolve service.yaml from source root (works in dev and after build) instead of relying on relative dist path
+const serviceYamlPath = path.resolve(process.cwd(), "service.yaml");
+
 app.post("/start", async (req, res) => {
     const { userId, execId, replId } = req.body; // Accept both execId and replId
     const id = execId ?? replId;
@@ -47,7 +50,7 @@ app.post("/start", async (req, res) => {
     }
 
     try {
-        const kubeManifests = readAndParseKubeYaml(path.join(__dirname, "../service.yaml"), id);
+    const kubeManifests = readAndParseKubeYaml(serviceYamlPath, id);
         for (const manifest of kubeManifests) {
             switch (manifest.kind) {
                 case "Deployment":
