@@ -17,9 +17,10 @@ function useSocket(replId: string) {
         const domain = (import.meta as any).env?.VITE_WS_BASE_DOMAIN || 'itexecutes.me';
         const isLocalhost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
         const localPort = (import.meta as any).env?.VITE_RUNNER_PORT || '3005';
+        const forceRemote = ((import.meta as any).env?.VITE_FORCE_REMOTE || '').toString() === '1' || ((import.meta as any).env?.VITE_FORCE_REMOTE || '').toString().toLowerCase() === 'true';
         const url = baseUrl
             ? baseUrl.replace('{replId}', replId)
-            : (isLocalhost ? `${protocol}://localhost:${localPort}` : `${protocol}://${replId}.${domain}`);
+            : (forceRemote || !isLocalhost ? `${protocol}://${replId}.${domain}` : `${protocol}://localhost:${localPort}`);
         const newSocket = io(url, {
             transports: ['websocket'],
             query: { replId }
