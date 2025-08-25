@@ -18,9 +18,10 @@ export function initWs(httpServer: HttpServer) {
     io.on("connection", async (socket) => {
         // Auth checks should happen here
         const host = socket.handshake.headers.host;
-        console.log(`host is ${host}`);
-        // Split the host by '.' and take the first part as replId
-        const replId = host?.split('.')[0];
+        const queryReplId = (socket.handshake.query?.replId as string) || '';
+        console.log(`host is ${host}, query replId is ${queryReplId}`);
+        // Prefer explicit query replId; fallback to subdomain-based resolution
+        const replId = queryReplId || host?.split('.')[0];
     
         if (!replId) {
             socket.disconnect();
@@ -65,8 +66,9 @@ function initHandlers(socket: Socket, replId: string) {
 
     socket.on("requestTerminal", async () => {
         terminalManager.createPty(socket.id, replId, (data, id) => {
+            // Emit plain string to avoid Buffer serialization differences on the client
             socket.emit('terminal', {
-                data: Buffer.from(data,"utf-8")
+                data
             });
         });
     });

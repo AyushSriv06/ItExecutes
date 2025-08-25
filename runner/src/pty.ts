@@ -23,7 +23,7 @@ export class TerminalManager {
             replId
         };
         term.on('exit', () => {
-            delete this.sessions[term.pid];
+            delete this.sessions[id];
         });
         return term;
     }
@@ -33,7 +33,9 @@ export class TerminalManager {
     }
 
     clear(terminalId: string) {
-        this.sessions[terminalId].terminal.kill();
-        delete this.sessions[terminalId];
+        if (this.sessions[terminalId]) {
+            this.sessions[terminalId].terminal.kill();
+            delete this.sessions[terminalId];
+        }
     }
 }
