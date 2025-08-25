@@ -6,7 +6,7 @@ export const Code = ({ selectedFile, socket }: { selectedFile: File | undefined,
   if (!selectedFile)
     return null
 
-  const code = selectedFile.content
+  const code = selectedFile.content ?? ""
   let language = selectedFile.name.split('.').pop()
 
   if (language === "js" || language === "jsx")
@@ -33,8 +33,7 @@ export const Code = ({ selectedFile, socket }: { selectedFile: File | undefined,
         value={code}
         theme="vs-dark"
         onChange={debounce((value) => {
-          // Should send diffs, for now sending the whole file
-          // PR and win a bounty!
+          if (typeof value !== 'string') return;
           socket.emit("updateContent", { path: selectedFile.path, content: value });
         }, 500)}
       />
