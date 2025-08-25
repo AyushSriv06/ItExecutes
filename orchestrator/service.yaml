@@ -54,7 +54,8 @@ spec:
               mountPath: /workspace
       containers:
         - name: runner
-          image: ayusz06/runner:latest
+          image: ayusz06/runner:fixed-out
+          imagePullPolicy: Always
           ports:
             - containerPort: 3005 # Single combined HTTP + WebSocket port
           volumeMounts:
